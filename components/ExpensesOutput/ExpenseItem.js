@@ -1,11 +1,25 @@
 import React from "react";
-import { Pressable, Text, View, StyleSheet } from "react-native";
+import { Pressable, Text, View, StyleSheet, Platform } from "react-native";
 import { GlobalStyles } from "../../constants/styles";
 import { getFormattedDate } from "../../util/date";
+import { useNavigation } from "@react-navigation/native";
+
 const ExpenseItem = ({ description, amount, date }) => {
+  const navigation = useNavigation();
+  const expensePressHandler = ({}) => {
+    navigation.navigate("ManageExpenses");
+  };
+
   return (
-    <Pressable>
-      <View style={styles.expenseItem}>
+    <View style={styles.expenseContainer}>
+      <Pressable
+        android_ripple={{ color: GlobalStyles.colors.primary200 }}
+        onPress={expensePressHandler}
+        style={({ pressed }) => [
+          styles.expenseInnerContainer,
+          pressed ? styles.pressed : null,
+        ]}
+      >
         <View>
           <Text style={[styles.text, styles.description]}>{description}</Text>
           <Text style={styles.text}>{getFormattedDate(date)}</Text>
@@ -13,27 +27,35 @@ const ExpenseItem = ({ description, amount, date }) => {
         <View style={styles.amountContainer}>
           <Text style={styles.amount}>{amount.toFixed(2)}</Text>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+    </View>
   );
 };
 
 export default ExpenseItem;
 
 const styles = StyleSheet.create({
-  expenseItem: {
-    padding: 12,
+  expenseContainer: {
     marginVertical: 8,
-    backgroundColor: GlobalStyles.colors.primary500,
-    flexDirection: "row",
-    justifyContent: "space-between",
     borderRadius: 6,
+    overflow: Platform.OS === "android" ? "hidden" : "visible",
+    //box shadow for Android
     elevation: 4,
     //box shadow for IOS
+    backgroundColor: GlobalStyles.colors.primary500,
     shadowColor: GlobalStyles.colors.gray500,
     shadowRadius: 4,
     shadowOffset: { width: 1, height: 1 },
     shadowOpacity: 0.4,
+  },
+  expenseInnerContainer: {
+    padding: 12,
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  pressed: {
+    opacity: 0.7,
   },
   text: {
     color: GlobalStyles.colors.primary50,
@@ -50,7 +72,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 4,
-    minWidth: 80
+    minWidth: 80,
   },
   amount: {
     color: GlobalStyles.colors.primary500,
