@@ -1,7 +1,6 @@
 import { useContext, useLayoutEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import ExpenseForm from "../components/ManageExpense/ExpenseForm";
-import Button from "../components/UI/Button";
 import IconButton from "../components/UI/IconButton";
 import { GlobalStyles } from "../constants/styles";
 import { ExpensesContext } from "../store/expenses-context";
@@ -27,33 +26,21 @@ const ManageExpenses = ({ route, navigation }) => {
     navigation.goBack();
   };
 
-  const confirmHandler = () => {
+  const confirmHandler = (expenseData) => {
     if (isEditing) {
-      expensesContext.updateExpense(editedExpenseId, {
-        description: "test",
-        amount: 99,
-        date: new Date("2022-05-19"),
-      });
+      expensesContext.updateExpense(editedExpenseId, expenseData);
     } else {
-      expensesContext.addExpense({
-        description: "test",
-        amount: 99,
-        date: new Date("2022-05-19"),
-      });
+      expensesContext.addExpense(expenseData);
     }
     navigation.goBack();
   };
   return (
     <View style={styles.container}>
-      <ExpenseForm />
-      <View style={styles.buttonsContainer}>
-        <Button style={styles.button} mode="flat" onPress={cancelHandler}>
-          Cancel
-        </Button>
-        <Button style={styles.button} onPress={confirmHandler}>
-          {isEditing ? "Update" : "Add"}
-        </Button>
-      </View>
+      <ExpenseForm
+        buttonLabel={isEditing ? "Update" : "Add"}
+        onSubmit={confirmHandler}
+        onCancel={cancelHandler}
+      />
       {isEditing && (
         <View style={styles.deleteContainer}>
           <IconButton
@@ -75,15 +62,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     backgroundColor: GlobalStyles.colors.primary800,
-  },
-  buttonsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  button: {
-    minWidth: 120,
-    marginHorizontal: 8,
   },
   deleteContainer: {
     marginTop: 16,
