@@ -1,15 +1,25 @@
-import { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import ExpensesOutput from "../components/ExpensesOutput/ExpensesOutput";
 import { ExpensesContext } from "../store/expenses-context";
 import { getDateMinusDays } from "../util/date";
 import { fetchExpenses } from "../util/http";
+import LoadingOverlay from "../components/UI/LoadingOverlay";
+import ErrorOverlay from "../components/UI/ErrorOverlay";
 const RecentExpenses = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const expensesContext = useContext(ExpensesContext);
 
   useEffect(() => {
     const getExpenses = async () => {
-      const expenses = await fetchExpenses();
-      expensesContext.setExpenses(expenses);
+      setLoading(true);
+      try {
+        const expenses = await fetchExpenses();
+        expensesContext.setExpenses(expenses);
+      } catch (error) {
+        setError("Could not fetch expenses");
+      }
+      setLoading(false);
     };
     getExpenses();
   }, []);
@@ -22,7 +32,18 @@ const RecentExpenses = () => {
   });
 
   return (
-    <ExpensesOutput expenses={recentExpenses} expensesPeriod="Last 7 days" />
+    <React.Fragment>
+      {loading ? (
+        <LoadingOverlay />
+      ) : error ? (
+        <ErrorOverlay message={error} onConfirm={() => setError('')}/>
+      ) : (
+        <ExpensesOutput
+          expenses={recentExpenses}
+          expensesPeriod="Last 7 days"
+        />
+      )}
+    </React.Fragment>
   );
 };
 

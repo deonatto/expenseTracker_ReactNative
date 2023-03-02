@@ -1,12 +1,16 @@
-import { useContext, useLayoutEffect } from "react";
+import React, { useContext, useLayoutEffect, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import ExpenseForm from "../components/ManageExpense/ExpenseForm";
+import ErrorOverlay from "../components/UI/ErrorOverlay";
 import IconButton from "../components/UI/IconButton";
+import LoadingOverlay from "../components/UI/LoadingOverlay";
 import { GlobalStyles } from "../constants/styles";
 import { ExpensesContext } from "../store/expenses-context";
-import { storeExpense } from "../util/http";
+import { storeExpense, updateExpense, deleteExpense } from "../util/http";
 
 const ManageExpenses = ({ route, navigation }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const expensesContext = useContext(ExpensesContext);
   const editedExpenseId = route.params?.expenseId;
   const isEditing = !!editedExpenseId;
@@ -22,9 +26,16 @@ const ManageExpenses = ({ route, navigation }) => {
     });
   }, [navigation, isEditing]);
 
-  const deleteExpenseHandler = () => {
-    expensesContext.deleteExpense(editedExpenseId);
-    navigation.goBack();
+  const deleteExpenseHandler = async () => {
+    setLoading(true);
+    try {
+      await deleteExpense(editedExpenseId);
+      expensesContext.deleteExpense(editedExpenseId);
+      navigation.goBack();
+    } catch (err) {
+      setError("Could not delete expense!");
+      setLoading(false);
+    }
   };
 
   const cancelHandler = () => {
@@ -32,31 +43,46 @@ const ManageExpenses = ({ route, navigation }) => {
   };
 
   const confirmHandler = async (expenseData) => {
-    if (isEditing) {
-      expensesContext.updateExpense(editedExpenseId, expenseData);
-    } else {
-      const id = await storeExpense(expenseData);
-      expensesContext.addExpense({...expenseData, id});
+    setLoading(true);
+    try {
+      if (isEditing) {
+        await updateExpense(editedExpenseId, expenseData);
+        expensesContext.updateExpense(editedExpenseId, expenseData);
+      } else {
+        const id = await storeExpense(expenseData);
+        expensesContext.addExpense({ ...expenseData, id });
+      }
+      navigation.goBack();
+    } catch (err) {
+      setError("Could not save data");
+      setLoading(false);
     }
-    navigation.goBack();
   };
   return (
     <View style={styles.container}>
-      <ExpenseForm
-        buttonLabel={isEditing ? "Update" : "Add"}
-        defaultValue={selectedExpense}
-        onSubmit={confirmHandler}
-        onCancel={cancelHandler}
-      />
-      {isEditing && (
-        <View style={styles.deleteContainer}>
-          <IconButton
-            icon="trash"
-            color={GlobalStyles.colors.error500}
-            size={36}
-            onPress={deleteExpenseHandler}
+      {loading ? (
+        <LoadingOverlay />
+      ) : error ? (
+        <ErrorOverlay message={error} onConfirm={() => setError("")} />
+      ) : (
+        <React.Fragment>
+          <ExpenseForm
+            buttonLabel={isEditing ? "Update" : "Add"}
+            defaultValue={selectedExpense}
+            onSubmit={confirmHandler}
+            onCancel={cancelHandler}
           />
-        </View>
+          {isEditing && (
+            <View style={styles.deleteContainer}>
+              <IconButton
+                icon="trash"
+                color={GlobalStyles.colors.error500}
+                size={36}
+                onPress={deleteExpenseHandler}
+              />
+            </View>
+          )}
+        </React.Fragment>
       )}
     </View>
   );
